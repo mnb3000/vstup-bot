@@ -1,12 +1,7 @@
 import { JSDOM } from 'jsdom';
 import { Spec, Student, University } from './types';
 
-export async function getSpecStudentsPage(specUrl: string, page: number): Promise<Student[]> {
-  if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
-    throw new Error('Provided link is not valid!');
-  }
-  const dom = await JSDOM.fromURL(`${specUrl}?page=${page}`);
-  const { document } = dom.window;
+export function parseStudents(document: Document): Student[] {
   const tableRows = document.querySelectorAll('table').item(0).tBodies.item(0)!.rows;
   const students: Student[] = [];
   for (let row of Array.from(tableRows)) {
@@ -32,6 +27,15 @@ export async function getSpecStudentsPage(specUrl: string, page: number): Promis
   return students;
 }
 
+export async function getSpecStudentsPage(specUrl: string, page: number): Promise<Student[]> {
+  if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
+    throw new Error('Provided link is not valid!');
+  }
+  const dom = await JSDOM.fromURL(`${specUrl}?page=${page}`);
+  const { document } = dom.window;
+  return parseStudents(document);
+}
+
 export async function getSpec(specUrl: string): Promise<Spec> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
     throw new Error('Provided link is not valid!');
@@ -47,9 +51,11 @@ export async function getSpec(specUrl: string): Promise<Spec> {
     .trim();
   const budgetPlaces = parseInt(document.querySelector('.font300')!.textContent!
     .split('БМmax')[1], 10);
-  let students: Student[] = [];
-  for (let i = 1; i <= pageCount; i++) {
-    students = [...students, ...(await getSpecStudentsPage(specUrl, i))]
+  let students: Student[] = parseStudents(document);
+  if (pageCount > 1) {
+    for (let i = 2; i <= pageCount; i++) {
+      students = [...students, ...(await getSpecStudentsPage(specUrl, i))]
+    }
   }
   return {
     specNum,
