@@ -1,9 +1,9 @@
 import { JSDOM } from 'jsdom';
-import { Spec, Student } from './types';
+import { Spec, Student, University } from './types';
 
 export async function getSpecStudentsPage(specUrl: string, page: number): Promise<Student[]> {
-  if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/')) {
-    throw new Error('Provided link is not valid!')
+  if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
+    throw new Error('Provided link is not valid!');
   }
   const dom = await JSDOM.fromURL(`${specUrl}?page=${page}`);
   const { document } = dom.window;
@@ -33,8 +33,8 @@ export async function getSpecStudentsPage(specUrl: string, page: number): Promis
 }
 
 export async function getSpec(specUrl: string): Promise<Spec> {
-  if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/')) {
-    throw new Error('Provided link is not valid!')
+  if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
+    throw new Error('Provided link is not valid!');
   }
   const dom = await JSDOM.fromURL(specUrl);
   const { document } = dom.window;
@@ -59,11 +59,31 @@ export async function getSpec(specUrl: string): Promise<Spec> {
   };
 }
 
-export async function getSpecLinkList(uniUrl: string) {
-  if (!uniUrl.includes('https://abit-poisk.org.ua/rate2019/')) {
+export async function getUniversity(uniUrl: string): Promise<University> {
+  if (!uniUrl.includes('https://abit-poisk.org.ua/rate2019/univer/')) {
     throw new Error('Provided link is not valid!');
   }
   const dom = await JSDOM.fromURL(uniUrl);
   const { document } = dom.window;
-  const tableRows = document.querySelectorAll('table').item(1).rows;
+  const uniName = document.querySelector('h2')!.textContent!
+    .replace(/\n/g, '')
+    .trim();
+  const tableRows = document.querySelector('table')!.rows;
+  // @ts-ignore
+  const specs: Spec[] = [];
+  for (let row of Array.from(tableRows)) {
+    const { cells } = row;
+    if (cells.item(0)!.attributes.getNamedItem('data-stooltip') === null) {
+      continue;
+    }
+    if (cells.item(0)!.attributes.getNamedItem('data-stooltip')!.value !== 'Бакалавр (на основі:Повна загальна середня освіта)') {
+      continue;
+    }
+    const specUrl = `https://abit-poisk.org.ua${cells.item(5)!.children.item(0)!.getAttribute('href')!}`;
+    specs.push(await getSpec(specUrl));
+  }
+  return {
+    uniName,
+    specs
+  };
 }
