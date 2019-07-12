@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
-import { Student } from './types';
+import { Spec, Student } from './types';
 
-export async function getSpecStudentPage(specUrl: string, page: number): Promise<Student[]> {
+export async function getSpecStudentsPage(specUrl: string, page: number): Promise<Student[]> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/')) {
     throw new Error('Provided link is not valid!')
   }
@@ -12,7 +12,9 @@ export async function getSpecStudentPage(specUrl: string, page: number): Promise
   for (let row of Array.from(tableRows)) {
     const { cells } = row;
     if (cells.item(1)!.textContent === 'ПІБ') continue;
-    const ratingPos = parseInt(cells.item(0)!.textContent!.replace(/\n/g, '').trim(), 10);
+    const ratingPos = parseInt(cells.item(0)!.textContent!
+      .replace(/\n/g, '')
+      .trim(), 10);
     const name = cells.item(1)!.textContent!.replace(/\n/g, '').trim();
     const priority = parseInt(cells.item(2)!.textContent!, 10);
     const points = parseFloat(cells.item(3)!.textContent!);
@@ -30,7 +32,7 @@ export async function getSpecStudentPage(specUrl: string, page: number): Promise
   return students;
 }
 
-export async function getSpecStudentList(specUrl: string): Promise<Student[]> {
+export async function getSpec(specUrl: string): Promise<Spec> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/')) {
     throw new Error('Provided link is not valid!')
   }
@@ -38,14 +40,26 @@ export async function getSpecStudentList(specUrl: string): Promise<Student[]> {
   const { document } = dom.window;
   const paginator = document.querySelector('.card .card-header .content-left');
   const pageCount = paginator ? paginator.childElementCount - 1 : 1;
-  let list: Student[] = [];
+  const specNum = parseInt(document.querySelector('h2')!.textContent!, 10);
+  const faculty = document.querySelector('.subhead-2')!.textContent!
+    .split('•')[0]
+    .replace(/\n/g, '')
+    .trim();
+  const budgetPlaces = parseInt(document.querySelector('.font300')!.textContent!
+    .split('БМmax')[1], 10);
+  let students: Student[] = [];
   for (let i = 1; i <= pageCount; i++) {
-    list = [...list, ...(await getSpecStudentPage(specUrl, i))]
+    students = [...students, ...(await getSpecStudentsPage(specUrl, i))]
   }
-  return list;
+  return {
+    specNum,
+    faculty,
+    budgetPlaces,
+    students
+  };
 }
 
-export async function getBachelorLinkList(uniUrl: string) {
+export async function getSpecLinkList(uniUrl: string) {
   if (!uniUrl.includes('https://abit-poisk.org.ua/rate2019/')) {
     throw new Error('Provided link is not valid!');
   }
