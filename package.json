@@ -1,0 +1,25 @@
+{
+  "name": "vstup-bot",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev src/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "jsdom": "^15.1.1",
+    "node-telegram-bot-api": "^0.30.0"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/jsdom": "^12.2.4",
+    "@types/node": "^12.6.2",
+    "@types/node-telegram-bot-api": "^0.31.0",
+    "nodemon": "^1.19.1",
+    "ts-node": "^8.3.0",
+    "ts-node-dev": "^1.0.0-pre.40",
+    "typescript": "^3.5.3"
+  }
+}
