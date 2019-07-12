@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "start": "ts-node src/index.ts",
-    "dev": "ts-node-dev src/index.ts"
+    "dev": "ts-node-dev --respawn src/index.ts"
   },
   "dependencies": {
     "dotenv": "^8.0.0",
