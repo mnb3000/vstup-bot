@@ -1,14 +1,16 @@
 export interface University {
   uniName: string,
+  specs: Spec[]
 }
 
-export interface Spec extends University {
+export interface Spec {
   specNum: number,
   faculty: string,
   budgetPlaces: number,
+  students: Student[],
 }
 
-export interface Student extends Spec {
+export interface Student {
   ratingPos: number,
   name: string,
   priority: number,

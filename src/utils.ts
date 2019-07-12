@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
-import { Student, Spec } from './types';
+import { Student } from './types';
 
-export async function getSpecStudentPage(specUrl: string, spec: Spec, page: number): Promise<Student[]> {
+export async function getSpecStudentPage(specUrl: string, page: number): Promise<Student[]> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/')) {
     throw new Error('Provided link is not valid!')
   }
@@ -25,13 +25,12 @@ export async function getSpecStudentPage(specUrl: string, spec: Spec, page: numb
       points,
       status,
       isDisabled,
-      ...spec
     });
   }
   return students;
 }
 
-export async function getSpecStudentList(specUrl: string, spec: Spec): Promise<Student[]> {
+export async function getSpecStudentList(specUrl: string): Promise<Student[]> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/')) {
     throw new Error('Provided link is not valid!')
   }
@@ -41,7 +40,7 @@ export async function getSpecStudentList(specUrl: string, spec: Spec): Promise<S
   const pageCount = paginator ? paginator.childElementCount - 1 : 1;
   let list: Student[] = [];
   for (let i = 1; i <= pageCount; i++) {
-    list = [...list, ...(await getSpecStudentPage(specUrl, spec, i))]
+    list = [...list, ...(await getSpecStudentPage(specUrl, i))]
   }
   return list;
 }
