@@ -1,13 +1,19 @@
-import * as dotenv from "dotenv";
-// import { getSpec } from './utils';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
 import { getUniversity } from './utils';
 
 dotenv.config();
 
 async function main() {
-  // const result = await getSpec('https://abit-poisk.org.ua/rate2019/direction/555585');
   const result = await getUniversity('https://abit-poisk.org.ua/rate2019/univer/174');
-  console.log(result);
+  const dumpFolderPath = path.resolve(__dirname, '../dumps');
+  try {
+    await fs.promises.access(dumpFolderPath);
+  } catch (e) {
+    await fs.promises.mkdir(dumpFolderPath);
+  }
+  fs.writeFileSync(path.resolve(dumpFolderPath, 'out.json'), JSON.stringify(result));
 }
 
 main()
