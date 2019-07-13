@@ -40,7 +40,7 @@ async function getSpecStudentsPage(specUrl: string, page: number): Promise<Stude
   return parseStudents(document);
 }
 
-async function getSpec(specUrl: string): Promise<Spec> {
+ async function getSpec(specUrl: string): Promise<Spec> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
     throw new Error('Provided link is not valid!');
   }
@@ -71,7 +71,7 @@ async function getSpec(specUrl: string): Promise<Spec> {
   };
 }
 
-export async function getUniversity(uniUrl: string): Promise<University> {
+async function getUniversity(uniUrl: string): Promise<University> {
   if (!uniUrl.includes('https://abit-poisk.org.ua/rate2019/univer/')) {
     throw new Error('Provided link is not valid!');
   }
@@ -82,7 +82,7 @@ export async function getUniversity(uniUrl: string): Promise<University> {
     .trim();
   console.log(`\n${uniName}: ${uniUrl}\n`);
   const tableRows = document.querySelector('table')!.rows;
-  const specs: Promise<Spec>[] = [];
+  const specs: Spec[] = [];
   for (let row of Array.from(tableRows)) {
     const { cells } = row;
     if (cells.item(0)!.attributes.getNamedItem('data-stooltip') === null ||
@@ -92,12 +92,12 @@ export async function getUniversity(uniUrl: string): Promise<University> {
       continue;
     }
     const specUrl = `https://abit-poisk.org.ua${cells.item(5)!.children.item(0)!.getAttribute('href')!}`;
-    specs.push(getSpec(specUrl));
+    specs.push(await getSpec(specUrl));
   }
   return {
     uniUrl,
     uniName,
-    specs: await Promise.all(specs)
+    specs
   };
 }
 
