@@ -1,8 +1,12 @@
 import { JSDOM } from 'jsdom';
-import { Spec, Student, University } from './types';
+import { Area, Spec, Student, University } from './types';
 
 export function parseStudents(document: Document): Student[] {
-  const tableRows = document.querySelectorAll('table').item(0).tBodies.item(0)!.rows;
+  const table = document.querySelectorAll('table').item(0);
+  if (!table) {
+    return []
+  }
+  const tableRows = table.tBodies.item(0)!.rows;
   const students: Student[] = [];
   for (let row of Array.from(tableRows)) {
     const { cells } = row;
@@ -51,6 +55,7 @@ export async function getSpec(specUrl: string): Promise<Spec> {
     .trim();
   const budgetPlaces = parseInt(document.querySelector('.font300')!.textContent!
     .split('БМmax')[1], 10);
+  console.log(`${faculty}: ${specNum}\n${specUrl}`);
   let students: Student[] = parseStudents(document);
   if (pageCount > 1) {
     for (let i = 2; i <= pageCount; i++) {
@@ -58,6 +63,7 @@ export async function getSpec(specUrl: string): Promise<Spec> {
     }
   }
   return {
+    specUrl,
     specNum,
     faculty,
     budgetPlaces,
@@ -74,6 +80,7 @@ export async function getUniversity(uniUrl: string): Promise<University> {
   const uniName = document.querySelector('h2')!.textContent!
     .replace(/\n/g, '')
     .trim();
+  console.log(`${uniName}: ${uniUrl}\n`);
   const tableRows = document.querySelector('table')!.rows;
   const specs: Spec[] = [];
   for (let row of Array.from(tableRows)) {
@@ -88,7 +95,34 @@ export async function getUniversity(uniUrl: string): Promise<University> {
     specs.push(await getSpec(specUrl));
   }
   return {
+    uniUrl,
     uniName,
     specs
   };
+}
+
+export async function getArea(areaUrl: string): Promise<Area> {
+  if (!areaUrl.includes('https://abit-poisk.org.ua/rate2019/region/')) {
+    throw new Error('Provided link is not valid!');
+  }
+  const dom = await JSDOM.fromURL(areaUrl);
+  const { document } = dom.window;
+  const areaName = document.querySelector('h1')!.textContent!.replace('ВНЗ у ', '');
+  console.log(`${areaName}: ${areaUrl}\n`);
+  const tableRows = document.querySelector('table')!.tBodies.item(0)!.rows;
+  const universities: University[] = [];
+  for (let row of Array.from(tableRows).slice(0, -1)) {
+    const { cells } = row;
+    const budgetPlaces = cells.item(1) ? parseInt(cells.item(1)!.textContent!, 10) : 0;
+    if (!budgetPlaces) {
+      continue;
+    }
+    const uniUrl = `https://abit-poisk.org.ua${cells.item(0)!.children.item(0)!.getAttribute('href')!}`;
+    universities.push(await getUniversity(uniUrl));
+  }
+  return {
+    areaUrl,
+    areaName,
+    universities
+  }
 }
