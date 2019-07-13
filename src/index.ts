@@ -13,7 +13,7 @@ async function main() {
   } catch (e) {
     await fs.promises.mkdir(dumpFolderPath);
   }
-  fs.writeFileSync(path.resolve(dumpFolderPath, 'out.json'), JSON.stringify(result));
+  fs.writeFileSync(path.resolve(dumpFolderPath, `${Date.now()}.json`), JSON.stringify(result));
 }
 
 main()

@@ -75,14 +75,13 @@ export async function getUniversity(uniUrl: string): Promise<University> {
     .replace(/\n/g, '')
     .trim();
   const tableRows = document.querySelector('table')!.rows;
-  // @ts-ignore
   const specs: Spec[] = [];
   for (let row of Array.from(tableRows)) {
     const { cells } = row;
-    if (cells.item(0)!.attributes.getNamedItem('data-stooltip') === null) {
-      continue;
-    }
-    if (cells.item(0)!.attributes.getNamedItem('data-stooltip')!.value !== 'Бакалавр (на основі:Повна загальна середня освіта)') {
+    if (cells.item(0)!.attributes.getNamedItem('data-stooltip') === null ||
+      cells.item(0)!.attributes.getNamedItem('data-stooltip')!.value !==
+      'Бакалавр (на основі:Повна загальна середня освіта)' ||
+      !parseInt(cells.item(2)!.textContent!, 10)) {
       continue;
     }
     const specUrl = `https://abit-poisk.org.ua${cells.item(5)!.children.item(0)!.getAttribute('href')!}`;
