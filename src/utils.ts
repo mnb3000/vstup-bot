@@ -1,4 +1,5 @@
 import { JSDOM } from 'jsdom';
+import * as crypto from 'crypto';
 import { Area, Spec, Student, University } from './types';
 
 function parseStudents(document: Document): Student[] {
@@ -18,8 +19,10 @@ function parseStudents(document: Document): Student[] {
     const priority = parseInt(cells.item(2)!.textContent!, 10);
     const points = parseFloat(cells.item(3)!.textContent!);
     const status = cells.item(4)!.textContent!;
+    const ukrPts = cells.item(5)!.children.item(0)!.children.item(0)!.textContent!;
     const isDisabled = cells.item(6)!.textContent!.includes('Квота');
     students.push(<Student>{
+      uid: crypto.createHash('sha1').update(ukrPts).digest('hex'),
       ratingPos,
       name,
       priority: isNaN(priority) ? 0 : priority,
@@ -40,7 +43,7 @@ async function getSpecStudentsPage(specUrl: string, page: number): Promise<Stude
   return parseStudents(document);
 }
 
- async function getSpec(specUrl: string): Promise<Spec> {
+async function getSpec(specUrl: string): Promise<Spec> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
     throw new Error('Provided link is not valid!');
   }

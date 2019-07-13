@@ -1,6 +1,7 @@
 type StudentStatus = 'Зареєстровано' | 'Допущено' | 'Скасовано (втрата пріор.)' | 'Заява надійшла з сайту' | 'Затримано'
 
 export interface Student {
+  uid: string,
   ratingPos: number,
   name: string,
   priority: number,
