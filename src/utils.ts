@@ -19,7 +19,7 @@ function parseStudents(document: Document): Student[] {
     const points = parseFloat(cells.item(3)!.textContent!);
     const status = cells.item(4)!.textContent!;
     const isDisabled = cells.item(6)!.textContent!.includes('Квота');
-    students.push({
+    students.push(<Student>{
       ratingPos,
       name,
       priority: isNaN(priority) ? 0 : priority,

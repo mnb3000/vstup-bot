@@ -1,13 +1,12 @@
-export interface Area {
-  areaUrl: string,
-  areaName: string,
-  universities: University[],
-}
+type StudentStatus = 'Зареєстровано' | 'Допущено' | 'Скасовано (втрата пріор.)' | 'Заява надійшла з сайту' | 'Затримано'
 
-export interface University {
-  uniUrl: string,
-  uniName: string,
-  specs: Spec[],
+export interface Student {
+  ratingPos: number,
+  name: string,
+  priority: number,
+  points: number,
+  status: StudentStatus,
+  isDisabled: boolean,
 }
 
 export interface Spec {
@@ -18,11 +17,14 @@ export interface Spec {
   students: Student[],
 }
 
-export interface Student {
-  ratingPos: number,
-  name: string,
-  priority: number,
-  points: number,
-  status: string,
-  isDisabled: boolean,
+export interface University {
+  uniUrl: string,
+  uniName: string,
+  specs: Spec[],
+}
+
+export interface Area {
+  areaUrl: string,
+  areaName: string,
+  universities: University[],
 }
