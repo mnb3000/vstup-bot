@@ -71,7 +71,7 @@ async function getSpec(specUrl: string): Promise<Spec> {
   };
 }
 
-async function getUniversity(uniUrl: string): Promise<University> {
+export async function getUniversity(uniUrl: string): Promise<University> {
   if (!uniUrl.includes('https://abit-poisk.org.ua/rate2019/univer/')) {
     throw new Error('Provided link is not valid!');
   }
@@ -110,7 +110,7 @@ async function getArea(areaUrl: string): Promise<Area> {
   const areaName = document.querySelector('h1')!.textContent!.replace('ВНЗ у ', '');
   console.log(`\n\n${areaName}: ${areaUrl}\n\n`);
   const tableRows = document.querySelector('table')!.tBodies.item(0)!.rows;
-  const universities: Promise<University>[] = [];
+  const universities: University[] = [];
   for (let row of Array.from(tableRows).slice(0, -1)) {
     const { cells } = row;
     const budgetPlaces = cells.item(1) ? parseInt(cells.item(1)!.textContent!, 10) : 0;
@@ -118,12 +118,12 @@ async function getArea(areaUrl: string): Promise<Area> {
       continue;
     }
     const uniUrl = `https://abit-poisk.org.ua${cells.item(0)!.children.item(0)!.getAttribute('href')!}`;
-    universities.push(getUniversity(uniUrl));
+    universities.push(await getUniversity(uniUrl));
   }
   return {
     areaUrl,
     areaName,
-    universities: await Promise.all(universities)
+    universities
   }
 }
 
@@ -131,11 +131,11 @@ export async function getAllAreas(): Promise<Area[]> {
   const dom = await JSDOM.fromURL('https://abit-poisk.org.ua/rate2019/');
   const { document } = dom.window;
   const tableRows = document.querySelector('table')!.tBodies.item(0)!.rows;
-  const areas: Promise<Area>[] = [];
+  const areas: Area[] = [];
   for (let row of Array.from(tableRows).slice(0, -1)) {
     const { cells } = row;
     const areaUrl = `https://abit-poisk.org.ua${cells.item(0)!.children.item(0)!.getAttribute('href')!}`;
-    areas.push(getArea(areaUrl));
+    areas.push(await getArea(areaUrl));
   }
-  return await Promise.all(areas);
+  return areas;
 }
