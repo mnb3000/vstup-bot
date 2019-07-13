@@ -67,7 +67,7 @@ async function getSpecStudentsPage(specUrl: string, page: number): Promise<Stude
     specNum,
     faculty,
     budgetPlaces,
-    students
+    students,
   };
 }
 
@@ -81,6 +81,14 @@ async function getUniversity(uniUrl: string): Promise<University> {
     .replace(/\n/g, '')
     .trim();
   console.log(`\n${uniName}: ${uniUrl}\n`);
+  const table = document.querySelector('table');
+  if (!table) {
+    return {
+      uniUrl,
+      uniName,
+      specs: [],
+    }
+  }
   const tableRows = document.querySelector('table')!.rows;
   const specs: Spec[] = [];
   for (let row of Array.from(tableRows)) {
@@ -97,7 +105,7 @@ async function getUniversity(uniUrl: string): Promise<University> {
   return {
     uniUrl,
     uniName,
-    specs
+    specs,
   };
 }
 
@@ -123,7 +131,7 @@ async function getArea(areaUrl: string): Promise<Area> {
   return {
     areaUrl,
     areaName,
-    universities
+    universities,
   }
 }
 
