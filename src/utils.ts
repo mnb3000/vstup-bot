@@ -40,7 +40,7 @@ async function getSpecStudentsPage(specUrl: string, page: number): Promise<Stude
   return parseStudents(document);
 }
 
-export async function getSpec(specUrl: string): Promise<Spec> {
+async function getSpec(specUrl: string): Promise<Spec> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
     throw new Error('Provided link is not valid!');
   }
@@ -82,7 +82,7 @@ async function getUniversity(uniUrl: string): Promise<University> {
     .trim();
   console.log(`\n${uniName}: ${uniUrl}\n`);
   const tableRows = document.querySelector('table')!.rows;
-  const specs: Spec[] = [];
+  const specs: Promise<Spec>[] = [];
   for (let row of Array.from(tableRows)) {
     const { cells } = row;
     if (cells.item(0)!.attributes.getNamedItem('data-stooltip') === null ||
@@ -92,12 +92,12 @@ async function getUniversity(uniUrl: string): Promise<University> {
       continue;
     }
     const specUrl = `https://abit-poisk.org.ua${cells.item(5)!.children.item(0)!.getAttribute('href')!}`;
-    specs.push(await getSpec(specUrl));
+    specs.push(getSpec(specUrl));
   }
   return {
     uniUrl,
     uniName,
-    specs
+    specs: await Promise.all(specs)
   };
 }
 
@@ -110,7 +110,7 @@ async function getArea(areaUrl: string): Promise<Area> {
   const areaName = document.querySelector('h1')!.textContent!.replace('ВНЗ у ', '');
   console.log(`\n\n${areaName}: ${areaUrl}\n\n`);
   const tableRows = document.querySelector('table')!.tBodies.item(0)!.rows;
-  const universities: University[] = [];
+  const universities: Promise<University>[] = [];
   for (let row of Array.from(tableRows).slice(0, -1)) {
     const { cells } = row;
     const budgetPlaces = cells.item(1) ? parseInt(cells.item(1)!.textContent!, 10) : 0;
@@ -118,12 +118,12 @@ async function getArea(areaUrl: string): Promise<Area> {
       continue;
     }
     const uniUrl = `https://abit-poisk.org.ua${cells.item(0)!.children.item(0)!.getAttribute('href')!}`;
-    universities.push(await getUniversity(uniUrl));
+    universities.push(getUniversity(uniUrl));
   }
   return {
     areaUrl,
     areaName,
-    universities
+    universities: await Promise.all(universities)
   }
 }
 
@@ -131,11 +131,11 @@ export async function getAllAreas(): Promise<Area[]> {
   const dom = await JSDOM.fromURL('https://abit-poisk.org.ua/rate2019/');
   const { document } = dom.window;
   const tableRows = document.querySelector('table')!.tBodies.item(0)!.rows;
-  const areas: Area[] = [];
+  const areas: Promise<Area>[] = [];
   for (let row of Array.from(tableRows).slice(0, -1)) {
     const { cells } = row;
     const areaUrl = `https://abit-poisk.org.ua${cells.item(0)!.children.item(0)!.getAttribute('href')!}`;
-    areas.push(await getArea(areaUrl));
+    areas.push(getArea(areaUrl));
   }
-  return areas;
+  return await Promise.all(areas);
 }
