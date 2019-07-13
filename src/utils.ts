@@ -22,7 +22,7 @@ function parseStudents(document: Document): Student[] {
     const ukrPts = cells.item(5)!.children.item(0)!.children.item(0)!.textContent!;
     const isDisabled = cells.item(6)!.textContent!.includes('Квота');
     students.push(<Student>{
-      uid: crypto.createHash('sha1').update(ukrPts).digest('hex'),
+      uid: crypto.createHash('sha1').update(name + ukrPts).digest('hex'),
       ratingPos,
       name,
       priority: isNaN(priority) ? 0 : priority,
