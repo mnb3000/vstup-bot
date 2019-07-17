@@ -4,7 +4,8 @@ import { Area, Spec, Student, University } from './types';
 
 function parseStudents(document: Document): Student[] {
   const table = document.querySelectorAll('table').item(0);
-  if (!table) {
+  if (!table || !document.querySelector('.table-responsive>table')) {
+    console.log('EMPTY!');
     return []
   }
   const tableRows = table.tBodies.item(0)!.rows;
@@ -19,7 +20,8 @@ function parseStudents(document: Document): Student[] {
     const priority = parseInt(cells.item(2)!.textContent!, 10);
     const points = parseFloat(cells.item(3)!.textContent!);
     const status = cells.item(4)!.textContent!;
-    const ukrPts = cells.item(5)!.children.item(0)!.children.item(0)!.textContent!;
+    const znoPts = cells.item(5)!.children.item(0);
+    const ukrPts = znoPts ? znoPts.children.item(0)!.textContent! : 100;
     const isDisabled = cells.item(6)!.textContent!.includes('Квота');
     students.push(<Student>{
       uid: crypto.createHash('sha1').update(name + ukrPts).digest('hex'),
@@ -74,7 +76,7 @@ async function getSpec(specUrl: string): Promise<Spec> {
   };
 }
 
-async function getUniversity(uniUrl: string): Promise<University> {
+export async function getUniversity(uniUrl: string): Promise<University> {
   if (!uniUrl.includes('https://abit-poisk.org.ua/rate2019/univer/')) {
     throw new Error('Provided link is not valid!');
   }
