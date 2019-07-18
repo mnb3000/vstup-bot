@@ -1,5 +1,6 @@
 import { JSDOM } from 'jsdom';
 import * as crypto from 'crypto';
+import batchPromises from 'batch-promises';
 import { Area, Spec, Student, University } from './types';
 
 function parseStudents(document: Document): Student[] {
@@ -58,14 +59,17 @@ async function getSpec(specUrl: string): Promise<Spec> {
     .split('•')[0]
     .replace(/\n/g, '')
     .trim();
-  const budgetPlaces = parseInt(document.querySelector('.font300')!.textContent!
-    .split('БМmax')[1], 10);
+  const allPlacesText = document.querySelector('.font300')!.textContent!;
+  const budgetPlaces = parseInt(allPlacesText.split('БМmax')[1] || allPlacesText.split('БМ')[1], 10);
   console.log(`${faculty}: ${specNum}\n${specUrl}`);
   let students: Student[] = parseStudents(document);
   if (pageCount > 1) {
+    const pagePromises: Promise<Student[]>[] = [];
     for (let i = 2; i <= pageCount; i++) {
-      students = [...students, ...(await getSpecStudentsPage(specUrl, i))]
+      pagePromises.push(getSpecStudentsPage(specUrl, i));
     }
+    const pages = await Promise.all(pagePromises);
+    students = [...students, ...pages.flat()]
   }
   return {
     specUrl,
@@ -94,19 +98,18 @@ export async function getUniversity(uniUrl: string): Promise<University> {
       specs: [],
     }
   }
-  const tableRows = document.querySelector('table')!.rows;
-  const specs: Spec[] = [];
-  for (let row of Array.from(tableRows)) {
+  const tableRows = Array.from(document.querySelector('table')!.rows).filter((row) => {
     const { cells } = row;
-    if (cells.item(0)!.attributes.getNamedItem('data-stooltip') === null ||
+    return !(cells.item(0)!.attributes.getNamedItem('data-stooltip') === null ||
       cells.item(0)!.attributes.getNamedItem('data-stooltip')!.value !==
       'Бакалавр (на основі:Повна загальна середня освіта)' ||
-      !parseInt(cells.item(2)!.textContent!, 10)) {
-      continue;
-    }
+      !parseInt(cells.item(2)!.textContent!, 10));
+  });
+  const specs: Spec[] = await batchPromises<HTMLTableRowElement, Spec>(3, tableRows, (row) => {
+    const { cells } = row;
     const specUrl = `https://abit-poisk.org.ua${cells.item(5)!.children.item(0)!.getAttribute('href')!}`;
-    specs.push(await getSpec(specUrl));
-  }
+    return getSpec(specUrl);
+  });
   return {
     uniUrl,
     uniName,

@@ -12,15 +12,8 @@ export interface Student {
   isDisabled: boolean,
 }
 
-export interface FullStudent {
+export interface FullStudent extends Student {
   pos?: number,
-  uid: string,
-  ratingPos: number,
-  name: string,
-  priority: number,
-  points: number,
-  status: StudentStatus,
-  isDisabled: boolean,
   specUrl: string,
   specNum: number,
   areaName: string,
@@ -29,37 +22,57 @@ export interface FullStudent {
 }
 
 export interface Priority {
-  areaName: string,
-  specUrl: string,
-  specNum: number,
-  faculty: string,
-  budgetPlaces: number,
-  uniName: string,
+  specId: number,
   points: number,
   ratingPos: number,
+  priority: number,
   isDisabled: boolean,
 }
 
-export interface Priorities {
-  [pos: number]: Priority,
-}
-
-export interface PriorityStudent {
+export interface StudentPriority {
   uid: string,
   name: string,
-  priorities: Priorities,
+  priorities: Priority[],
+  inList?: boolean,
+}
+
+export interface PriorityStudent extends Priority {
+  uid: string,
+  name: string,
 }
 
 export interface StudentDict {
-  [uid: string]: PriorityStudent,
+  [uid: string]: StudentPriority,
 }
 
-export interface Spec {
+export interface SpecBase {
   specUrl: string,
   specNum: number,
   faculty: string,
   budgetPlaces: number,
+}
+
+export interface Spec extends SpecBase {
   students: Student[],
+}
+
+export interface FullSpecListItem extends SpecBase {
+  areaName: string,
+  uniName: string,
+  applications: PriorityStudent[],
+}
+
+export interface FullSpec extends Spec {
+  areaName: string,
+  uniName: string,
+}
+
+export interface FullSpecBaseDict {
+  [id: number]: FullSpecListItem,
+}
+
+export interface FullSpecDict {
+  [id: number]: FullSpec,
 }
 
 export interface University {

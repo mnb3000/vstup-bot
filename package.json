@@ -1,15 +1,16 @@
 {
   "name": "vstup-bot",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "src/algorithm/index.ts",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "ts-node src/algorithm/index.ts",
     "start:parser": "ts-node src/parser.ts",
     "start:reducer": "ts-node src/reducer.ts",
-    "dev": "ts-node-dev --respawn src/index.ts"
+    "dev": "ts-node-dev --respawn src/algorithm/index.ts"
   },
   "dependencies": {
+    "batch-promises": "Nicktho/batch-promises",
     "dotenv": "^8.0.0",
     "exceljs": "^1.13.0",
     "jsdom": "^15.1.1",

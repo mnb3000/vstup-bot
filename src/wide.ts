@@ -5,7 +5,7 @@ import { orderBy } from 'lodash';
 import { Area, FullStudent } from './types';
 
 async function main() {
-  const dumpBuffer = await fs.promises.readFile(path.resolve(__dirname, '../dumps/dump_2.json'), 'utf-8');
+  const dumpBuffer = await fs.promises.readFile(path.resolve(__dirname, '../dumps/dump.json'), 'utf-8');
   const dump: Area[] = JSON.parse(dumpBuffer);
   const list: FullStudent[] = [];
   dump.forEach((area) => {
