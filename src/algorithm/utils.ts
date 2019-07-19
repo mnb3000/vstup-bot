@@ -1,5 +1,13 @@
 import { orderBy } from 'lodash';
-import { Area, FullSpecBaseDict, FullSpecDict, FullSpecListItem, Maybe, StudentDict, University } from '../types';
+import {
+  Area,
+  FullSpecBaseDict,
+  FullSpecDict,
+  FullSpecListItem,
+  Maybe,
+  StudentDict,
+  University
+} from '../types';
 
 export function filterDump(dump: Area[], regexFilter: RegExp): Area[] {
   const filteredDump: Area[] = [];

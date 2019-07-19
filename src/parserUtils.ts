@@ -13,7 +13,7 @@ function parseStudents(document: Document): Student[] {
   const students: Student[] = [];
   for (let row of Array.from(tableRows)) {
     const { cells } = row;
-    if (cells.item(1)!.textContent === 'ПІБ') continue;
+    if (!cells.item(1) || cells.item(1)!.textContent === 'ПІБ') continue;
     const ratingPos = parseInt(cells.item(0)!.textContent!
       .replace(/\n/g, '')
       .trim(), 10);

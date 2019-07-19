@@ -1,4 +1,18 @@
-type StudentStatus = 'Зареєстровано' | 'Допущено' | 'Скасовано (втрата пріор.)' | 'Заява надійшла з сайту' | 'Затримано'
+type StudentStatus = 'Зареєстровано' | 'Допущено' | 'Скасовано (втрата пріор.)' | 'Заява надійшла з сайту' | 'Затримано';
+
+export const superVolumeKeys = <const> ['121', '12*'];
+
+export type SuperVolumeKeys = typeof superVolumeKeys[number];
+
+export const SuperVolumes: Record<SuperVolumeKeys, number> = {
+  '12*': 5176,
+  '121': 1196,
+};
+
+export const SuperVolumeFilters: Record<SuperVolumeKeys, RegExp> = {
+  '12*': /^12[^1]$/,
+  '121': /^121$/,
+};
 
 export type Maybe<T> = T | void;
 

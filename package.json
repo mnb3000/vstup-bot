@@ -4,8 +4,10 @@
   "main": "src/algorithm/index.ts",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src/algorithm/index.ts",
+    "start": "ts-node src/algorithm/multi.ts",
+    "start:single": "ts-node src/algorithm/index.ts",
     "start:parser": "ts-node src/parser.ts",
+    "start:wide": "ts-node src/wide.ts",
     "start:reducer": "ts-node src/reducer.ts",
     "dev": "ts-node-dev --respawn src/algorithm/index.ts"
   },
