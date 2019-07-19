@@ -103,6 +103,7 @@ export async function getUniversity(uniUrl: string): Promise<University> {
     return !(cells.item(0)!.attributes.getNamedItem('data-stooltip') === null ||
       cells.item(0)!.attributes.getNamedItem('data-stooltip')!.value !==
       'Бакалавр (на основі:Повна загальна середня освіта)' ||
+      !cells.item(2)!.textContent!.includes('max') ||
       !parseInt(cells.item(2)!.textContent!, 10));
   });
   const specs: Spec[] = await batchPromises<HTMLTableRowElement, Spec>(3, tableRows, (row) => {

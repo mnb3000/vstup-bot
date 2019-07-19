@@ -22,7 +22,7 @@ import {
 async function main() {
   const fullDumpBuffer = await fs.promises.readFile(path.resolve(__dirname, '../../dumps/dump.json'), 'utf-8');
   const fullDump: Area[] = JSON.parse(fullDumpBuffer);
-  const filteredDump = filterDump(fullDump, /^12.$/);
+  const filteredDump = filterDump(fullDump, /.+/);
   const specDict = getSpecDict(filteredDump);
   const studentDict = getStudentDict(filteredDump);
   let specApplicationList = getFullSpecBaseDict(specDict);
@@ -54,7 +54,7 @@ async function main() {
       Object.keys(specApplicationList).forEach((specId) => {
         const numSpecId = parseInt(specId, 10);
         const spec: FullSpecListItem = specApplicationList[numSpecId];
-        const deletedApplications = spec.applications.splice(spec.budgetPlaces, Infinity);
+        const deletedApplications = spec.applications.splice(spec.budgetPlaces - Math.floor(spec.budgetPlaces * 0.05), Infinity);
         if (deletedApplications.length) {
           areApplicationsRemovedMaxVolume = true;
         }
