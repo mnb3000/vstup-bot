@@ -38,6 +38,9 @@ async function main() {
     priorityWaitList.push(firstPriorityStudent);
   });
   priorityWaitList.forEach((prior) => {
+    if (prior.isDisabled) {
+      return
+    }
     studentApplicationList[prior.uid].inList = true;
     specApplicationList[prior.specId].applications.push(prior);
   });
@@ -70,6 +73,9 @@ async function main() {
         });
       });
       priorityWaitList.forEach((prior) => {
+        if (prior.isDisabled) {
+          return
+        }
         studentApplicationList[prior.uid].inList = true;
         specApplicationList[prior.specId].applications.push(prior);
       });
@@ -114,6 +120,9 @@ async function main() {
     });
 
     priorityWaitList.forEach((prior) => {
+      if (prior.isDisabled) {
+        return
+      }
       studentApplicationList[prior.uid].inList = true;
       specApplicationList[prior.specId].applications.push(prior);
     });
