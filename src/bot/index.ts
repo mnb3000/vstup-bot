@@ -140,7 +140,7 @@ ${examples}`, { parse_mode: 'Markdown' });
       }
     });
   });
-  bot.onText(/^\/lastUpdate$/, async (msg) => {
+  bot.onText(/^\/lastupdate$/i, async (msg) => {
     const formattedDate = dumpStats.mtime.toLocaleString('ru');
     await bot.sendMessage(msg.chat.id, `Последнее обновление базы:
 *${formattedDate}*`, { parse_mode: 'Markdown' })
