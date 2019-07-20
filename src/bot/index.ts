@@ -140,6 +140,7 @@ ${examples}`, { parse_mode: 'Markdown' });
         console.log(user.tgId, ' blocked/not started bot');
       }
     });
+    await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
   });
   bot.onText(/^\/lastupdate$/i, async (msg) => {
     const formattedDate = dumpStats.mtime.toLocaleString('ru');
