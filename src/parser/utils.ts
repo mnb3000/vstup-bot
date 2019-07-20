@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 import * as crypto from 'crypto';
 import batchPromises from 'batch-promises';
-import { Area, Spec, Student, University } from './types';
+import { Area, Spec, Student, University } from '../types';
 
 function parseStudents(document: Document): Student[] {
   const table = document.querySelectorAll('table').item(0);

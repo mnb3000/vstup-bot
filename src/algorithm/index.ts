@@ -1,7 +1,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { orderBy } from 'lodash';
-import { Area, FullSpecListItem, PriorityStudent, StudentPriority } from '../types';
+import {
+  Area,
+  FullSpecListItem,
+  PriorityStudent,
+  StudentPriority,
+  SuperVolumeFilters, SuperVolumeKeys,
+  superVolumeKeys,
+  SuperVolumes
+} from '../types';
 import {
   filterDump,
   getFullSpecBaseDict,
@@ -14,7 +22,7 @@ import {
 async function main() {
   const fullDumpBuffer = await fs.promises.readFile(path.resolve(__dirname, '../../dumps/dump.json'), 'utf-8');
   const fullDump: Area[] = JSON.parse(fullDumpBuffer);
-  const filteredDump = filterDump(fullDump, /^12[^1]$/);
+  const filteredDump = filterDump(fullDump, /.+/);
   const specDict = getSpecDict(filteredDump);
   const studentDict = getStudentDict(filteredDump);
   let specApplicationList = getFullSpecBaseDict(specDict);
@@ -30,6 +38,9 @@ async function main() {
     priorityWaitList.push(firstPriorityStudent);
   });
   priorityWaitList.forEach((prior) => {
+    if (prior.isDisabled) {
+      return
+    }
     studentApplicationList[prior.uid].inList = true;
     specApplicationList[prior.specId].applications.push(prior);
   });
@@ -46,7 +57,7 @@ async function main() {
       Object.keys(specApplicationList).forEach((specId) => {
         const numSpecId = parseInt(specId, 10);
         const spec: FullSpecListItem = specApplicationList[numSpecId];
-        const deletedApplications = spec.applications.splice(spec.budgetPlaces, Infinity);
+        const deletedApplications = spec.applications.splice(spec.budgetPlaces - Math.floor(spec.budgetPlaces * 0.05), Infinity);
         if (deletedApplications.length) {
           areApplicationsRemovedMaxVolume = true;
         }
@@ -62,34 +73,56 @@ async function main() {
         });
       });
       priorityWaitList.forEach((prior) => {
+        if (prior.isDisabled) {
+          return
+        }
         studentApplicationList[prior.uid].inList = true;
         specApplicationList[prior.specId].applications.push(prior);
       });
       priorityWaitList = [];
     }
-    const superList = orderBy(Object.keys(specApplicationList).map(specId => {
-      const numSpecId = parseInt(specId, 10);
-      const spec: FullSpecListItem = specApplicationList[numSpecId];
-      return spec.applications
-    }).flat(), ['points', 'priority', 'ratingPos'], ['desc', 'asc', 'asc']);
-    const deletedApplications = superList.splice(5176, Infinity);
-    if (deletedApplications.length) {
-      areApplicationsRemovedSuper = true;
-    }
-    deletedApplications.forEach((application) => {
-      const spec = specApplicationList[application.specId];
-      const appIndex = spec.applications.findIndex(app => app.uid === application.uid);
-      spec.applications.splice(appIndex, 1);
-      const student = studentApplicationList[application.uid];
-      student.inList = false;
-      const nextPriority =  student.priorities.shift();
-      if (nextPriority) {
-        priorityWaitList.push({ ...nextPriority, uid: student.uid, name: student.name });
-      } else {
-        delete studentApplicationList[application.uid];
-      }
+    // @ts-ignore
+    let superVolumeList: Record<SuperVolumeKeys, PriorityStudent[]> = {};
+    superVolumeKeys.forEach((key) => {
+      const superVolumeSpecApplicationList = Object.keys(specApplicationList)
+        .filter(specId => {
+        const numSpecId = parseInt(specId, 10);
+        const spec: FullSpecListItem = specApplicationList[numSpecId];
+        return !!spec.specNum.toString().match(SuperVolumeFilters[key]);
+      })
+        .map(specId => {
+          const numSpecId = parseInt(specId, 10);
+          return specApplicationList[numSpecId].applications;
+        })
+        .flat();
+      superVolumeList[key] = orderBy(superVolumeSpecApplicationList, ['points', 'priority', 'ratingPos'], ['desc', 'asc', 'asc']);
     });
+
+    superVolumeKeys.forEach(superVolumeKey => {
+      const superList = superVolumeList[superVolumeKey];
+      const deletedApplications = superList.splice(SuperVolumes[superVolumeKey], Infinity);
+      if (deletedApplications.length) {
+        areApplicationsRemovedSuper = true;
+      }
+      deletedApplications.forEach((application) => {
+        const spec = specApplicationList[application.specId];
+        const appIndex = spec.applications.findIndex(app => app.uid === application.uid);
+        spec.applications.splice(appIndex, 1);
+        const student = studentApplicationList[application.uid];
+        student.inList = false;
+        const nextPriority =  student.priorities.shift();
+        if (nextPriority) {
+          priorityWaitList.push({ ...nextPriority, uid: student.uid, name: student.name });
+        } else {
+          delete studentApplicationList[application.uid];
+        }
+      });
+    });
+
     priorityWaitList.forEach((prior) => {
+      if (prior.isDisabled) {
+        return
+      }
       studentApplicationList[prior.uid].inList = true;
       specApplicationList[prior.specId].applications.push(prior);
     });

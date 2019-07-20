@@ -1,14 +1,10 @@
-import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getAllAreas, getUniversity } from './parserUtils';
-
-dotenv.config();
+import { getAllAreas } from './utils';
 
 async function main() {
-  // const result = await getUniversity('https://abit-poisk.org.ua/rate2019/univer/174');
   const result = await getAllAreas();
-  const dumpFolderPath = path.resolve(__dirname, '../dumps');
+  const dumpFolderPath = path.resolve(__dirname, '../../dumps');
   try {
     await fs.promises.access(dumpFolderPath);
   } catch (e) {

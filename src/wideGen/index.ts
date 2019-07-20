@@ -2,10 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import Excel, { PaperSize } from 'exceljs';
 import { orderBy } from 'lodash';
-import { Area, FullStudent } from './types';
+import { Area, FullStudent } from '../types';
 
 async function main() {
-  const dumpBuffer = await fs.promises.readFile(path.resolve(__dirname, '../dumps/dump.json'), 'utf-8');
+  const dumpBuffer = await fs.promises.readFile(path.resolve(__dirname, '../../dumps/dump.json'), 'utf-8');
   const dump: Area[] = JSON.parse(dumpBuffer);
   const list: FullStudent[] = [];
   dump.forEach((area) => {
@@ -95,7 +95,7 @@ async function main() {
       hyperlink: student.specUrl
     }
   })));
-  const dumpFolderPath = path.resolve(__dirname, '../dumps');
+  const dumpFolderPath = path.resolve(__dirname, '../../dumps');
   try {
     await fs.promises.access(dumpFolderPath);
   } catch (e) {
