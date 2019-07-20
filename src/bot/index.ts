@@ -124,7 +124,6 @@ ${tryAgain}
 ${examples}`, { parse_mode: 'Markdown' });
       return;
     }
-    console.log(spec);
     await bot.sendMessage(chatId, specInfo(spec), { parse_mode: 'Markdown' });
   });
 
