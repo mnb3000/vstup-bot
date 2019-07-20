@@ -23,9 +23,9 @@ const examples = `*Примеры:*
 
 const tryAgain = 'Можешь попробовать еще раз с другой ссылкой';
 
-const specInfo = (spec: FullSpecListItem) => `*Регион:* \`${spec.areaName}\`
-*ВУЗ:* \`${spec.uniName}\`
-${spec.faculty !== 'Бакалавр (на основі: ПЗСО)' ? `*Факультет:* \`${spec.faculty}\`
+const specInfo = (spec: FullSpecListItem) => `*Регион:* \`${spec.areaName}.replace('\`', '\\\`')\`
+*ВУЗ:* \`${spec.uniName}.replace('\`', '\\\`')\`
+${spec.faculty !== 'Бакалавр (на основі: ПЗСО)' ? `*Факультет:* \`${spec.faculty.replace('`', '\`')}\`
 ` : ''}*Специальность:* \`${spec.specNum}\`
 *Макс. кол-во бюдж. мест:* \`${spec.budgetPlaces}\`
 
