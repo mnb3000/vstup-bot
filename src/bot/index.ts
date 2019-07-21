@@ -4,8 +4,10 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 import Datastore from 'nedb-promises';
 import Excel, { PaperSize } from 'exceljs';
-import { FullSpecBaseDict, FullSpecListItem } from '../types';
+import { find } from 'lodash';
+import { FullSpecBaseDict, FullSpecListItem, PriorityStudent } from '../types';
 import batchPromises = require('batch-promises');
+import * as crypto from "crypto";
 
 dotenv.config();
 
@@ -38,6 +40,13 @@ ${spec.faculty !== 'Бакалавр (на основі: ПЗСО)' ? `*Факу
 
 [Ссылка на список](${spec.specUrl})`;
 
+const inlineTableKeyboard = (specId: number) => ({
+  inline_keyboard: [[{
+    text: 'Получить полный список',
+    callback_data: `getList_${specId}`
+  }]]
+});
+
 interface User {
   tgId: number,
 }
@@ -58,6 +67,18 @@ async function main() {
   const dumpBuffer = await fs.promises.readFile(dumpPath, 'utf-8');
   const dumpStats = await fs.promises.stat(dumpPath);
   const dump: FullSpecBaseDict = JSON.parse(dumpBuffer);
+  const dumpApplicationList = Object.keys(dump)
+    .map((specId) => {
+    const numSpecId = parseInt(specId, 10);
+    const spec: FullSpecListItem = dump[numSpecId];
+    return spec.applications.map((application) => ({
+      ...application,
+      searchName: application.name
+        .replace(/\./g, '')
+        .toLowerCase()
+    }));
+  })
+    .flat();
   const bot = new TelegramBot(token!, { polling: true });
   const tmpPath = path.resolve(__dirname, '../../tmp');
   try {
@@ -99,6 +120,12 @@ async function main() {
 Для того чтобы узнать проходной балл на свою специальность тебе нужно отправить мне ссылку на списки этого конкурсного предложения на одном из этих сайтов: \`https://vstup.edbo.gov.ua\`, \`https://abit-poisk.org.ua\`, \`https://vstup.osvita.ua\` или \`http://vstup.info/\`. Также мне можно отправить код конкурсного предложения (цифры, находящиеся в конце ссылки).
 
 ${examples}
+
+*NEW!* Теперь я могу показать на какой приоритет проходишь на бюджет *ИМЕННО ТЫ!*
+
+*Примеры:*
+\`/search Миколишин М. Ю.\`
+\`/search наконечний о с\`
 
 *Данные баллы не являются официальными и точными и предоставлены лишь для ознакомления, разработчик не несет ответственности за несовпадение реального и рассчитаного проходного балла*
 
@@ -156,12 +183,7 @@ ${examples}`, { parse_mode: 'Markdown' });
     }
     await bot.sendMessage(chatId, specInfo(spec), {
       parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [[{
-          text: 'Получить полный список',
-          callback_data: `getList_${specId}`
-        }]]
-      },
+      reply_markup: inlineTableKeyboard(specId),
     });
   });
 
@@ -254,6 +276,50 @@ ${examples}`, { parse_mode: 'Markdown' });
       await workbook.xlsx.writeFile(`${tmpPath}/${specId}.xlsx`);
       await sendExcelFile(`${specId}.xlsx`, query.message.chat.id, query.id);
     }
+  });
+
+  async function sendNotFound(chatId: number) {
+    await bot.sendMessage(chatId, `*Не найдено!*
+К сожалению эта заявка не была найдена в базе. Это означает либо то, что, к сожалению, вы не прошли на бюджет ни по одному из приоритетов, либо же ваша заявка прошла на *закрытое* конкурсное предложение с фиксированным количеством мест`);
+  }
+
+  bot.onText(/^\/search([^\n\d]+)?(\d+)?$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    if (!match || !match[1]) {
+      await bot.sendMessage(chatId, `Я могу показать на какой приоритет проходишь на бюджет *ИМЕННО ТЫ!*
+
+*Примеры:*
+\`/search Миколишин М. Ю.\`
+\`/search наконечний о с\``, { parse_mode: 'Markdown' });
+      return;
+    }
+    const name = match[1].replace(/\./g, '').toLowerCase().trim();
+    let application: PriorityStudent | undefined;
+    application = find(dumpApplicationList, { searchName: name });
+    if (!application) {
+      await sendNotFound(chatId);
+      return;
+    }
+    if (match[2]) {
+      const uid = crypto.createHash('sha1').update(application.name + match[2]).digest('hex');
+      application = find(dumpApplicationList, { uid });
+    }
+    if (!application) {
+      await sendNotFound(chatId);
+      return;
+    }
+    await bot.sendMessage(chatId, `*Имя:* \`${application.name}\`
+*КБ:* \`${application.points}\`
+*Приоритет:* \`${application.priority}\`
+${specInfo(dump[application.specId])}
+
+_Если это не ваша заявка - попробуйте добавить в команду ваш балл ЗНО по_ *украинскому языку и литературе
+Пример:*
+\`/search Миколишин М. Ю. 167\``,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: inlineTableKeyboard(application.specId),
+      });
   });
 
   bot.onText(/^\/cast([^]*)/, async (msg, match) => {
