@@ -53,7 +53,7 @@ async function getSpec(specUrl: string): Promise<Spec> {
   const dom = await JSDOM.fromURL(specUrl);
   const { document } = dom.window;
   const paginator = document.querySelector('.card .card-header .content-left');
-  const pageCount = paginator ? paginator.childElementCount - 1 : 1;
+  const pageCount = paginator ? parseInt(paginator.children.item(paginator.childElementCount - 2)!.textContent!, 10): 1;
   const specNum = parseInt(document.querySelector('h2')!.textContent!, 10);
   const faculty = document.querySelector('.subhead-2')!.textContent!
     .split('•')[0]
