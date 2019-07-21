@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 import Datastore from 'nedb-promises';
+import Excel, { PaperSize } from 'exceljs';
 import { FullSpecBaseDict, FullSpecListItem } from '../types';
 import batchPromises = require('batch-promises');
 
@@ -10,16 +11,19 @@ dotenv.config();
 
 const admins = [73628236];
 
-const edboUrl = 'https://vstup.edbo.gov.ua/offer/';
-const abitPoiskUrl = 'https://abit-poisk.org.ua/rate2019/direction/';
-const vstupInfoUrl = 'http://vstup.info/2019/';
-const vstupOsvitaUrl = 'https://vstup.osvita.ua/y2019/';
+const httpPrefix = 'http://';
+const httpsPrefix = 'https://';
+
+const edboUrl = 'vstup.edbo.gov.ua/offer/';
+const abitPoiskUrl = 'abit-poisk.org.ua/rate2019/direction/';
+const vstupInfoUrl = 'vstup.info/2019/';
+const vstupOsvitaUrl = 'vstup.osvita.ua/y2019/';
 
 const examples = `*Примеры:*
-\`${edboUrl}555585/\`
-\`${abitPoiskUrl}555585\`
-\`${vstupInfoUrl}174/i2019i174p555585.html\`
-\`${vstupOsvitaUrl}r27/174/555585/\`
+\`${httpsPrefix}${edboUrl}555585/\`
+\`${httpsPrefix}${abitPoiskUrl}555585\`
+\`${httpPrefix}${vstupInfoUrl}174/i2019i174p555585.html\`
+\`${httpsPrefix}${vstupOsvitaUrl}r27/174/555585/\`
 \`555585\``;
 
 const tryAgain = 'Можешь попробовать еще раз с другой ссылкой';
@@ -55,6 +59,12 @@ async function main() {
   const dumpStats = await fs.promises.stat(dumpPath);
   const dump: FullSpecBaseDict = JSON.parse(dumpBuffer);
   const bot = new TelegramBot(token!, { polling: true });
+  const tmpPath = path.resolve(__dirname, '../../tmp');
+  try {
+    await fs.promises.access(tmpPath);
+  } catch (e) {
+    await fs.promises.mkdir(tmpPath);
+  }
   const db = Datastore.create({
     filename: 'users.db'
   });
@@ -84,6 +94,7 @@ async function main() {
   });
   bot.onText(/^\/(?:start)|(?:help)$/, async (msg) => {
     await bot.sendMessage(msg.chat.id, `*Привет!* Я — бот который поможет тебе узнать *приблизительные* проходные баллы на бюджет на любую специальность!
+*NEW!* Теперь я могу показать полный список людей которые рекомендованы на бюджет и список людей *претендующих на академическую стипендию!*
 
 Для того чтобы узнать проходной балл на свою специальность тебе нужно отправить мне ссылку на списки этого конкурсного предложения на одном из этих сайтов: \`https://vstup.edbo.gov.ua\`, \`https://abit-poisk.org.ua\`, \`https://vstup.osvita.ua\` или \`http://vstup.info/\`. Также мне можно отправить код конкурсного предложения (цифры, находящиеся в конце ссылки).
 
@@ -107,6 +118,8 @@ _Разработчик улучшеного бота:_ @HomelessAtomist`,
     const urlMatch = match[1].trim().replace(/ /g, '');
     const specId = parseInt(
       urlMatch
+        .replace(httpPrefix, '')
+        .replace(httpsPrefix, '')
         .replace(edboUrl, '')
         .replace(abitPoiskUrl, '')
         .replace(vstupInfoUrl, '')
@@ -141,7 +154,106 @@ ${tryAgain}
 ${examples}`, { parse_mode: 'Markdown' });
       return;
     }
-    await bot.sendMessage(chatId, specInfo(spec), { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, specInfo(spec), {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [[{
+          text: 'Получить полный список',
+          callback_data: `getList_${specId}`
+        }]]
+      },
+    });
+  });
+
+  async function sendExcelFile(fileName: string, chatId: number, queryId: string) {
+    const file = await fs.promises.readFile(`${tmpPath}/${fileName}`);
+    await bot.sendDocument(chatId, file, {}, {
+      filename: fileName,
+      contentType: 'application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    await bot.sendMessage(chatId, `*Синим* выделены те люди, которые могут претендовать на *академическую стипендию*
+
+*Разработчик бота не несет ответственности за несоответствие списков и претендентов на акад. стипендию с реальностью*`,
+      { parse_mode: 'Markdown' });
+    await bot.answerCallbackQuery(queryId)
+  }
+
+  bot.on('callback_query', async (query) => {
+    if (!query.data || !query.message) {
+      return;
+    }
+    const specMatch = query.data.match(/^getList_(\d+)$/);
+    if (!specMatch) {
+      return;
+    }
+    const specId = parseInt(specMatch[1], 10);
+    const spec = dump[specId];
+    if (!spec || !spec.applications.length) {
+      return;
+    }
+    try {
+      await sendExcelFile(`${specId}.xlsx`, query.message.chat.id, query.id);
+    } catch (e) {
+      const sheetApplications = spec.applications.map((application, index) => ({
+        ...application,
+        pos: index + 1,
+      }));
+      const workbook = new Excel.Workbook();
+      const sheet = workbook.addWorksheet('List', {
+        pageSetup: {
+          paperSize: PaperSize.A4,
+          orientation: 'portrait',
+        }
+      });
+      sheet.columns = [
+        {
+          header: '№',
+          key: 'pos',
+          width: 8,
+        },
+        {
+          header: 'ФИО',
+          key: 'name',
+          width: 20,
+        },
+        {
+          header: 'КБ',
+          key: 'points',
+          width: 8,
+        },
+        {
+          header: 'Приор',
+          key: 'priority',
+          width: 10,
+        },
+      ];
+      sheet.addRows(sheetApplications);
+      const stipBarrier = Math.floor((sheet.rowCount - 1) * 0.45);
+      sheet.eachRow((row, index) => {
+        const realIndex = index - 1;
+        if (!realIndex) {
+          row.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: {
+              argb: 'FFFFFF00',
+            },
+          };
+          return;
+        }
+        if (realIndex <= stipBarrier) {
+          row.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: {
+              argb: 'FF729FCF',
+            },
+          }
+        }
+      });
+      await workbook.xlsx.writeFile(`${tmpPath}/${specId}.xlsx`);
+      await sendExcelFile(`${specId}.xlsx`, query.message.chat.id, query.id);
+    }
   });
 
   bot.onText(/^\/cast([^]*)/, async (msg, match) => {
@@ -157,7 +269,7 @@ ${examples}`, { parse_mode: 'Markdown' });
     const formattedDate = dumpStats.mtime.toLocaleString('ru');
     await bot.sendMessage(msg.chat.id, `Последнее обновление базы:
 *${formattedDate}*`, { parse_mode: 'Markdown' })
-  })
+  });
 }
 
 main()
