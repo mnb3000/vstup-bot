@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 import Datastore from 'nedb-promises';
 import { FullSpecBaseDict, FullSpecListItem } from '../types';
+import batchPromises = require('batch-promises');
 
 dotenv.config();
 
@@ -57,13 +58,28 @@ async function main() {
   const db = Datastore.create({
     filename: 'users.db'
   });
+  const users = await db.find<User>({});
+  users.forEach(async (user) => {
+    const userDuplicates = await db.find<User>({ tgId: user.tgId });
+    if (userDuplicates.length > 1) {
+      userDuplicates.slice(1, userDuplicates.length).forEach(async (user) => {
+        await db.remove({ _id: user._id }, {});
+      });
+    }
+  });
+
   bot.on('message', async (msg) => {
     if (!msg.from) {
       return;
     }
-    const user = await db.findOne<User>({ tgId: msg.from.id });
-    if (!user) {
+    const users = await db.find<User>({ tgId: msg.from.id });
+    if (!users.length) {
       await db.insert<User>({ tgId: msg.from.id });
+    }
+    if (users.length > 1) {
+      users.slice(1, users.length).forEach(async (user) => {
+        await db.remove({ _id: user._id }, {});
+      });
     }
   });
   bot.onText(/^\/(?:start)|(?:help)$/, async (msg) => {
@@ -133,13 +149,8 @@ ${examples}`, { parse_mode: 'Markdown' });
       return;
     }
     const allUsers = await db.find<User>({});
-    allUsers.forEach(async (user) => {
-      try {
-        await bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' });
-      } catch (e) {
-        console.log(user.tgId, ' blocked/not started bot');
-      }
-    });
+    await batchPromises(5, allUsers, (user) => bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
+      .catch(() => console.log(`${user.tgId} blocked/not started bot`)));
     await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
   });
   bot.onText(/^\/lastupdate$/i, async (msg) => {

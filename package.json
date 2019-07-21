@@ -6,8 +6,8 @@
   "scripts": {
     "start": "ts-node src/bot/index.ts",
     "start:algo": "ts-node src/algorithm/index.ts",
-    "start:parser": "ts-node src/parser/parser.ts",
-    "start:wide": "ts-node src/wideGen/wide.ts",
+    "start:parser": "ts-node src/parser/index.ts",
+    "start:wide": "ts-node src/wideGen/index.ts",
     "dev:bot": "ts-node-dev --respawn src/bot/index.ts"
   },
   "dependencies": {
