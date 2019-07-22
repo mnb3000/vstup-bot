@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv';
 import Datastore from 'nedb-promises';
 import Excel, { PaperSize } from 'exceljs';
 import { find } from 'lodash';
-import { FullSpecBaseDict, FullSpecListItem, PriorityStudent } from '../types';
+import { FullSpecBaseDict, FullSpecListItem, SearchPriorityStudent } from '../types';
 import batchPromises = require('batch-promises');
 import * as crypto from "crypto";
 
@@ -71,11 +71,12 @@ async function main() {
     .map((specId) => {
     const numSpecId = parseInt(specId, 10);
     const spec: FullSpecListItem = dump[numSpecId];
-    return spec.applications.map((application) => ({
+    return spec.applications.map((application, index) => ({
       ...application,
       searchName: application.name
         .replace(/\./g, '')
-        .toLowerCase()
+        .toLowerCase(),
+      budgetPlaceRatingPos: index + 1,
     }));
   })
     .flat();
@@ -122,6 +123,8 @@ async function main() {
 ${examples}
 
 *NEW!* Теперь я могу показать на какой приоритет проходишь на бюджет *ИМЕННО ТЫ!*
+
+Так же поиск показывает проходите ли вы на *академическую стипендию*
 
 *Примеры:*
 \`/search Миколишин М. Ю.\`
@@ -299,7 +302,7 @@ ${examples}`, { parse_mode: 'Markdown' });
       return;
     }
     const name = match[1].replace(/\./g, '').toLowerCase().trim();
-    let application: PriorityStudent | undefined;
+    let application: SearchPriorityStudent | undefined;
     application = find(dumpApplicationList, { searchName: name });
     if (!application) {
       await sendNotFound(chatId);
@@ -313,10 +316,14 @@ ${examples}`, { parse_mode: 'Markdown' });
       await sendNotFound(chatId);
       return;
     }
+    const spec = dump[application.specId];
+    const stipBarrier = Math.floor(spec.budgetPlaces * 0.45);
     await bot.sendMessage(chatId, `*Имя:* \`${application.name}\`
 *КБ:* \`${application.points}\`
 *Приоритет:* \`${application.priority}\`
-${specInfo(dump[application.specId])}
+*Стипендия:* \`${application.budgetPlaceRatingPos <= stipBarrier ? 'Да' : 'Нет'}\`
+
+${specInfo(spec)}
 
 _Если это не ваша заявка - попробуйте добавить в команду ваш балл ЗНО по_ *украинскому языку и литературе
 Пример:*

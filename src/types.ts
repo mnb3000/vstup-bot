@@ -215,6 +215,11 @@ export interface PriorityStudent extends Priority {
   name: string,
 }
 
+export interface SearchPriorityStudent extends PriorityStudent {
+  searchName: string,
+  budgetPlaceRatingPos: number,
+}
+
 export interface StudentDict {
   [uid: string]: StudentPriority,
 }
