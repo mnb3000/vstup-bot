@@ -64,12 +64,12 @@ async function getSpec(specUrl: string): Promise<Spec> {
   console.log(`${faculty}: ${specNum}\n${specUrl}`);
   let students: Student[] = parseStudents(document);
   if (pageCount > 1) {
-    const pagePromises: Promise<Student[]>[] = [];
+    const pageNums: number[] = [];
     for (let i = 2; i <= pageCount; i++) {
-      pagePromises.push(getSpecStudentsPage(specUrl, i));
+      pageNums.push(i);
     }
-    const pages = await Promise.all(pagePromises);
-    students = [...students, ...pages.flat()]
+    const pages = await batchPromises<number, Student[]>(3, pageNums, (pageNum) => getSpecStudentsPage(specUrl, pageNum));
+    students = [...students, ...pages.flat()];
   }
   return {
     specUrl,
