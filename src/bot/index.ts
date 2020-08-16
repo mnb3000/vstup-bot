@@ -17,16 +17,16 @@ const httpPrefix = 'http://';
 const httpsPrefix = 'https://';
 
 const edboUrl = 'vstup.edbo.gov.ua/offer/';
-const abitPoiskUrl = 'abit-poisk.org.ua/rate2019/direction/';
-const vstupInfoUrl = 'vstup.info/2019/';
-const vstupOsvitaUrl = 'vstup.osvita.ua/y2019/';
+const abitPoiskUrl = 'abit-poisk.org.ua/rate2020/direction/';
+const vstupInfoUrl = 'vstup.info/2020/';
+const vstupOsvitaUrl = 'vstup.osvita.ua/y2020/';
 
 const examples = `*Примеры:*
-\`${httpsPrefix}${edboUrl}555585/\`
-\`${httpsPrefix}${abitPoiskUrl}555585\`
-\`${httpPrefix}${vstupInfoUrl}174/i2019i174p555585.html\`
-\`${httpsPrefix}${vstupOsvitaUrl}r27/174/555585/\`
-\`555585\``;
+\`${httpsPrefix}${edboUrl}719169/\`
+\`${httpsPrefix}${abitPoiskUrl}719169\`
+\`${httpPrefix}${vstupInfoUrl}174/i2020i174p719169.html\`
+\`${httpsPrefix}${vstupOsvitaUrl}r27/174/719169/\`
+\`719169\``;
 
 const tryAgain = 'Можешь попробовать еще раз с другой ссылкой';
 

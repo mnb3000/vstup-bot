@@ -32,7 +32,7 @@ export function filterDump(dump: Area[], regexFilter: RegExp): Area[] {
 }
 
 export function getSpecId(url: string): Maybe<number> {
-  const match = url.match(/https:\/\/abit-poisk.org.ua\/rate2019\/direction\/(\d+)/);
+  const match = url.match(/https:\/\/abit-poisk.org.ua\/rate2020\/direction\/(\d+)/);
   return match ? parseInt(match[1], 10) : undefined;
 }
 

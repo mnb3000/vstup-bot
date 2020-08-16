@@ -2,6 +2,7 @@ import { JSDOM } from 'jsdom';
 import * as crypto from 'crypto';
 import batchPromises from 'batch-promises';
 import { Area, Spec, Student, University } from '../types';
+import { sheva } from './sheva';
 
 function parseStudents(document: Document): Student[] {
   const table = document.querySelectorAll('table').item(0);
@@ -17,7 +18,7 @@ function parseStudents(document: Document): Student[] {
     const ratingPos = parseInt(cells.item(0)!.textContent!
       .replace(/\n/g, '')
       .trim(), 10);
-    const name = cells.item(1)!.textContent!.replace(/\n/g, '').trim();
+    const name = cells.item(1)!.querySelector('a')!.textContent!.replace(/\n/g, '').trim();
     const priority = parseInt(cells.item(2)!.textContent!, 10);
     const points = parseFloat(cells.item(3)!.textContent!);
     const status = cells.item(4)!.textContent!;
@@ -38,7 +39,7 @@ function parseStudents(document: Document): Student[] {
 }
 
 async function getSpecStudentsPage(specUrl: string, page: number): Promise<Student[]> {
-  if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
+  if (!specUrl.includes('https://abit-poisk.org.ua/rate2020/direction/')) {
     throw new Error('Provided link is not valid!');
   }
   const dom = await JSDOM.fromURL(`${specUrl}?page=${page}`);
@@ -47,20 +48,21 @@ async function getSpecStudentsPage(specUrl: string, page: number): Promise<Stude
 }
 
 async function getSpec(specUrl: string): Promise<Spec> {
-  if (!specUrl.includes('https://abit-poisk.org.ua/rate2019/direction/')) {
-    throw new Error('Provided link is not valid!');
+  if (!specUrl.includes('https://abit-poisk.org.ua/rate2020/direction/')) {
+    throw new Error(`Provided link is not valid! ${specUrl}`);
   }
   const dom = await JSDOM.fromURL(specUrl);
   const { document } = dom.window;
-  const paginator = document.querySelector('.card .card-header .content-left');
+  const paginator = document.querySelector('.card .card-header .content-left div');
   const pageCount = paginator ? parseInt(paginator.children.item(paginator.childElementCount - 2)!.textContent!, 10): 1;
   const specNum = parseInt(document.querySelector('h2')!.textContent!, 10);
   const faculty = document.querySelector('.subhead-2')!.textContent!
     .split('•')[0]
     .replace(/\n/g, '')
     .trim();
-  const allPlacesText = document.querySelector('.font300')!.textContent!;
-  const budgetPlaces = parseInt(allPlacesText.split('БМmax')[1] || allPlacesText.split('БМ')[1], 10);
+  const specId = parseInt(specUrl.replace('https://abit-poisk.org.ua/rate2020/direction/', '').replace('/', ''), 10);
+  const allPlacesText = document.querySelector('.card-header .text-left .subhead-2:not(.horizontal-scroll-xs) .body-2')!.textContent!;
+  const budgetPlaces = parseInt(allPlacesText.split('БМmax')[1] || allPlacesText.split('БМ')[1], 10) || sheva[specId];
   console.log(`${faculty}: ${specNum}\n${specUrl}`);
   let students: Student[] = parseStudents(document);
   if (pageCount > 1) {
@@ -81,8 +83,8 @@ async function getSpec(specUrl: string): Promise<Spec> {
 }
 
 export async function getUniversity(uniUrl: string): Promise<University> {
-  if (!uniUrl.includes('https://abit-poisk.org.ua/rate2019/univer/')) {
-    throw new Error('Provided link is not valid!');
+  if (!uniUrl.includes('https://abit-poisk.org.ua/rate2020/univer/')) {
+    throw new Error(`Provided link is not valid! ${uniUrl}`);
   }
   const dom = await JSDOM.fromURL(uniUrl);
   const { document } = dom.window;
@@ -100,11 +102,18 @@ export async function getUniversity(uniUrl: string): Promise<University> {
   }
   const tableRows = Array.from(document.querySelector('table')!.rows).filter((row) => {
     const { cells } = row;
-    return !(cells.item(0)!.attributes.getNamedItem('data-stooltip') === null ||
-      cells.item(0)!.attributes.getNamedItem('data-stooltip')!.value !==
-      'Бакалавр (на основі:Повна загальна середня освіта)' ||
-      !cells.item(2)!.textContent!.includes('max') ||
-      !parseInt(cells.item(2)!.textContent!, 10));
+    return cells.item(0)!.attributes.getNamedItem('data-stooltip') !== null &&
+      cells.item(0)!.attributes.getNamedItem('data-stooltip')!.value === 'Бакалавр (на основі:ПЗСО)' &&
+      (
+        (
+          cells.item(2)!.textContent!.includes('max') &&
+          parseInt(cells.item(2)!.textContent!, 10)
+        ) ||
+        (
+          uniUrl.replace('https://abit-poisk.org.ua/rate2020/univer/', '').replace('/', '') === '41' &&
+          cells.item(2)!.textContent!.trim() === 'n/a'
+        )
+      );
   });
   const specs: Spec[] = await batchPromises<HTMLTableRowElement, Spec>(3, tableRows, (row) => {
     const { cells } = row;
@@ -119,8 +128,8 @@ export async function getUniversity(uniUrl: string): Promise<University> {
 }
 
 async function getArea(areaUrl: string): Promise<Area> {
-  if (!areaUrl.includes('https://abit-poisk.org.ua/rate2019/region/')) {
-    throw new Error('Provided link is not valid!');
+  if (!areaUrl.includes('https://abit-poisk.org.ua/rate2020/region/')) {
+    throw new Error(`Provided link is not valid! ${areaUrl}`);
   }
   const dom = await JSDOM.fromURL(areaUrl);
   const { document } = dom.window;
@@ -145,12 +154,15 @@ async function getArea(areaUrl: string): Promise<Area> {
 }
 
 export async function getAllAreas(): Promise<Area[]> {
-  const dom = await JSDOM.fromURL('https://abit-poisk.org.ua/rate2019/');
+  const dom = await JSDOM.fromURL('https://abit-poisk.org.ua/rate2020/');
   const { document } = dom.window;
   const tableRows = document.querySelector('table')!.tBodies.item(0)!.rows;
   const areas: Area[] = [];
   for (let row of Array.from(tableRows).slice(0, -1)) {
     const { cells } = row;
+    if (cells.length < 5) {
+      continue;
+    }
     const areaUrl = `https://abit-poisk.org.ua${cells.item(0)!.children.item(0)!.getAttribute('href')!}`;
     areas.push(await getArea(areaUrl));
   }
