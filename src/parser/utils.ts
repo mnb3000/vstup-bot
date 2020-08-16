@@ -2,6 +2,7 @@ import { JSDOM } from 'jsdom';
 import * as crypto from 'crypto';
 import batchPromises from 'batch-promises';
 import { Area, Spec, Student, University } from '../types';
+import { sheva } from './sheva';
 
 function parseStudents(document: Document): Student[] {
   const table = document.querySelectorAll('table').item(0);
@@ -59,8 +60,9 @@ async function getSpec(specUrl: string): Promise<Spec> {
     .split('•')[0]
     .replace(/\n/g, '')
     .trim();
+  const specId = parseInt(specUrl.replace('https://abit-poisk.org.ua/rate2020/direction/', '').replace('/', ''), 10);
   const allPlacesText = document.querySelector('.card-header .text-left .subhead-2:not(.horizontal-scroll-xs) .body-2')!.textContent!;
-  const budgetPlaces = parseInt(allPlacesText.split('БМmax')[1] || allPlacesText.split('БМ')[1], 10);
+  const budgetPlaces = parseInt(allPlacesText.split('БМmax')[1] || allPlacesText.split('БМ')[1], 10) || sheva[specId];
   console.log(`${faculty}: ${specNum}\n${specUrl}`);
   let students: Student[] = parseStudents(document);
   if (pageCount > 1) {
@@ -102,8 +104,16 @@ export async function getUniversity(uniUrl: string): Promise<University> {
     const { cells } = row;
     return cells.item(0)!.attributes.getNamedItem('data-stooltip') !== null &&
       cells.item(0)!.attributes.getNamedItem('data-stooltip')!.value === 'Бакалавр (на основі:ПЗСО)' &&
-      cells.item(2)!.textContent!.includes('max') &&
-      parseInt(cells.item(2)!.textContent!, 10);
+      (
+        (
+          cells.item(2)!.textContent!.includes('max') &&
+          parseInt(cells.item(2)!.textContent!, 10)
+        ) ||
+        (
+          uniUrl.replace('https://abit-poisk.org.ua/rate2020/univer/', '').replace('/', '') === '41' &&
+          cells.item(2)!.textContent!.trim() === 'n/a'
+        )
+      );
   });
   const specs: Spec[] = await batchPromises<HTMLTableRowElement, Spec>(3, tableRows, (row) => {
     const { cells } = row;
@@ -150,6 +160,9 @@ export async function getAllAreas(): Promise<Area[]> {
   const areas: Area[] = [];
   for (let row of Array.from(tableRows).slice(0, -1)) {
     const { cells } = row;
+    if (cells.length < 5) {
+      continue;
+    }
     const areaUrl = `https://abit-poisk.org.ua${cells.item(0)!.children.item(0)!.getAttribute('href')!}`;
     areas.push(await getArea(areaUrl));
   }
