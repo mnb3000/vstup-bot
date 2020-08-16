@@ -57,7 +57,7 @@ async function main() {
       Object.keys(specApplicationList).forEach((specId) => {
         const numSpecId = parseInt(specId, 10);
         const spec: FullSpecListItem = specApplicationList[numSpecId];
-        const deletedApplications = spec.applications.splice(spec.budgetPlaces - Math.floor(spec.budgetPlaces * 0.05), Infinity);
+        const deletedApplications = spec.applications.splice(spec.budgetPlaces - Math.floor(spec.budgetPlaces * 0.1), Infinity);
         if (deletedApplications.length) {
           areApplicationsRemovedMaxVolume = true;
         }
