@@ -66,7 +66,7 @@ export function getStudentDict(dump: Area[]): StudentDict {
           return
         }
         spec.students.forEach((student) => {
-          if (student.status !== 'Допущено' || !student.priority) {
+          if (student.status === 'Скасовано (втрата пріор.)' || student.status === 'Затримано' || !student.priority) {
             return;
           }
           if (!studentDict[student.uid]) {

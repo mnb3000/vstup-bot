@@ -6,7 +6,6 @@ import Datastore from 'nedb-promises';
 import Excel, { PaperSize } from 'exceljs';
 import { find } from 'lodash';
 import { FullSpecBaseDict, FullSpecListItem, SearchPriorityStudent } from '../types';
-import batchPromises = require('batch-promises');
 import * as crypto from "crypto";
 
 dotenv.config();
@@ -343,8 +342,12 @@ _Если это не ваша заявка - попробуйте добави�
       return;
     }
     const allUsers = await db.find<User>({});
-    await batchPromises(5, allUsers, (user) => bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
-      .catch(() => console.log(`${user.tgId} blocked/not started bot`)));
+    allUsers.forEach((user, index) => {
+      setTimeout(() => {
+        bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
+          .catch(() => console.log(`${user.tgId} blocked/not started bot`))
+      }, index * 50)
+    })
     await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
   });
   bot.onText(/^\/lastupdate$/i, async (msg) => {
