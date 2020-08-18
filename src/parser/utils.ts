@@ -42,44 +42,54 @@ async function getSpecStudentsPage(specUrl: string, page: number): Promise<Stude
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2020/direction/')) {
     throw new Error('Provided link is not valid!');
   }
-  const dom = await JSDOM.fromURL(`${specUrl}?page=${page}`);
-  const { document } = dom.window;
-  return parseStudents(document);
+  try {
+    const dom = await JSDOM.fromURL(`${specUrl}?page=${page}`);
+    const { document } = dom.window;
+    return parseStudents(document);
+  } catch (e) {
+    console.log(`${specUrl} page ${page} failed, retrying...`)
+    return getSpecStudentsPage(specUrl, page);
+  }
 }
 
 async function getSpec(specUrl: string): Promise<Spec> {
   if (!specUrl.includes('https://abit-poisk.org.ua/rate2020/direction/')) {
     throw new Error(`Provided link is not valid! ${specUrl}`);
   }
-  const dom = await JSDOM.fromURL(specUrl);
-  const { document } = dom.window;
-  const paginator = document.querySelector('.card .card-header .content-left div');
-  const pageCount = paginator ? parseInt(paginator.children.item(paginator.childElementCount - 2)!.textContent!, 10): 1;
-  const specNum = parseInt(document.querySelector('h2')!.textContent!, 10);
-  const faculty = document.querySelector('.subhead-2')!.textContent!
-    .split('•')[0]
-    .replace(/\n/g, '')
-    .trim();
-  const specId = parseInt(specUrl.replace('https://abit-poisk.org.ua/rate2020/direction/', '').replace('/', ''), 10);
-  const allPlacesText = document.querySelector('.card-header .text-left .subhead-2:not(.horizontal-scroll-xs) .body-2')!.textContent!;
-  const budgetPlaces = parseInt(allPlacesText.split('БМmax')[1] || allPlacesText.split('БМ')[1], 10) || sheva[specId];
-  console.log(`${faculty}: ${specNum}\n${specUrl}`);
-  let students: Student[] = parseStudents(document);
-  if (pageCount > 1) {
-    const pageNums: number[] = [];
-    for (let i = 2; i <= pageCount; i++) {
-      pageNums.push(i);
+  try {
+    const dom = await JSDOM.fromURL(specUrl);
+    const { document } = dom.window;
+    const paginator = document.querySelector('.card .card-header .content-left div');
+    const pageCount = paginator ? parseInt(paginator.children.item(paginator.childElementCount - 2)!.textContent!, 10): 1;
+    const specNum = parseInt(document.querySelector('h2')!.textContent!, 10);
+    const faculty = document.querySelector('.subhead-2')!.textContent!
+      .split('•')[0]
+      .replace(/\n/g, '')
+      .trim();
+    const specId = parseInt(specUrl.replace('https://abit-poisk.org.ua/rate2020/direction/', '').replace('/', ''), 10);
+    const allPlacesText = document.querySelector('.card-header .text-left .subhead-2:not(.horizontal-scroll-xs) .body-2')!.textContent!;
+    const budgetPlaces = parseInt(allPlacesText.split('БМmax')[1] || allPlacesText.split('БМ')[1], 10) || sheva[specId];
+    console.log(`${faculty}: ${specNum}\n${specUrl}`);
+    let students: Student[] = parseStudents(document);
+    if (pageCount > 1) {
+      const pageNums: number[] = [];
+      for (let i = 2; i <= pageCount; i++) {
+        pageNums.push(i);
+      }
+      const pages = await batchPromises<number, Student[]>(3, pageNums, (pageNum) => getSpecStudentsPage(specUrl, pageNum));
+      students = [...students, ...pages.flat()];
     }
-    const pages = await batchPromises<number, Student[]>(3, pageNums, (pageNum) => getSpecStudentsPage(specUrl, pageNum));
-    students = [...students, ...pages.flat()];
+    return {
+      specUrl,
+      specNum,
+      faculty,
+      budgetPlaces,
+      students,
+    };
+  } catch (e) {
+    console.log(`${specUrl} page 1 failed, retrying...`);
+    return getSpec(specUrl);
   }
-  return {
-    specUrl,
-    specNum,
-    faculty,
-    budgetPlaces,
-    students,
-  };
 }
 
 export async function getUniversity(uniUrl: string): Promise<University> {

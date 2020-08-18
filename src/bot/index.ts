@@ -108,10 +108,12 @@ async function main() {
     if (!users.length) {
       await db.insert<User>({ tgId: msg.from.id });
     }
+    const promiseArr: Promise<number>[] = []
     if (users.length > 1) {
-      users.slice(1, users.length).forEach(async (user) => {
-        await db.remove({ _id: user._id }, {});
+      users.slice(1, users.length).forEach((user) => {
+        promiseArr.push(db.remove({ _id: user._id }, {}));
       });
+      await Promise.all(promiseArr);
     }
   });
   bot.onText(/^\/(?:start)|(?:help)$/, async (msg) => {
