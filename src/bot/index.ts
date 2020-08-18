@@ -254,7 +254,7 @@ ${examples}`, { parse_mode: 'Markdown' });
         },
       ];
       sheet.addRows(sheetApplications);
-      const stipBarrier = Math.floor((sheet.rowCount - 1) * 0.45);
+      const stipBarrier = Math.floor(spec.budgetPlaces * 0.45);
       sheet.eachRow((row, index) => {
         const realIndex = index - 1;
         if (!realIndex) {
