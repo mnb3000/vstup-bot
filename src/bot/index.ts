@@ -345,7 +345,7 @@ _Если это не ваша заявка - попробуйте добави�
     allUsers.forEach((user, index) => {
       setTimeout(() => {
         bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
-          .catch(() => console.log(`${user.tgId} blocked/not started bot`))
+          .catch((e) => console.log(`${user.tgId} error: ${e}`))
       }, index * 50)
     })
     await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
