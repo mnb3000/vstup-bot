@@ -350,6 +350,14 @@ _Если это не ваша заявка - попробуйте добави�
     })
     await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
   });
+
+  bot.onText(/^\/previewCast([^]*)/, async (msg, match) => {
+    if (msg.chat.type !== 'private' || !admins.includes(msg.from!.id) || !match) {
+      return;
+    }
+    await bot.sendMessage(msg.chat.id, match[1].trim(), { parse_mode: 'Markdown' });
+  })
+
   bot.onText(/^\/lastupdate$/i, async (msg) => {
     const formattedDate = dumpStats.mtime.toLocaleString('ru');
     await bot.sendMessage(msg.chat.id, `Последнее обновление базы:
