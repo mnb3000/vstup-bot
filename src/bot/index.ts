@@ -48,6 +48,11 @@ const inlineTableKeyboard = (specId: number) => ({
 
 interface User {
   tgId: number,
+  blocked?: boolean
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function main() {
@@ -90,14 +95,17 @@ async function main() {
     filename: 'users.db'
   });
   const users = await db.find<User>({});
-  users.forEach(async (user) => {
+
+  for (const user of users) {
     const userDuplicates = await db.find<User>({ tgId: user.tgId });
     if (userDuplicates.length > 1) {
-      userDuplicates.slice(1, userDuplicates.length).forEach(async (user) => {
-        await db.remove({ _id: user._id }, {});
-      });
+      const promiseArr: Promise<number>[] = [];
+      for (const duplicate of userDuplicates.slice(1, userDuplicates.length)) {
+        promiseArr.push(db.remove({ _id: user._id }, {}));
+      }
+      await Promise.all(promiseArr);
     }
-  });
+  }
 
   bot.on('message', async (msg) => {
     if (!msg.from) {
@@ -107,6 +115,10 @@ async function main() {
     if (!users.length) {
       await db.insert<User>({ tgId: msg.from.id });
     }
+    if (users[0].blocked) {
+      await db.update({ tgId: msg.from.id }, { $unset: { blocked: true } });
+    }
+
     const promiseArr: Promise<number>[] = []
     if (users.length > 1) {
       users.slice(1, users.length).forEach((user) => {
@@ -337,32 +349,65 @@ _Если это не ваша заявка - попробуйте добави�
       });
   });
 
+  const castBlockedHandler = async (e: any, userId: number) => {
+    if (e.response && e.response.body && e.response.body.code && e.response.body.code === 403) {
+      console.log(`${userId} blocked`);
+      await db.update({ tdId: userId }, { $set: { blocked: true } });
+      return;
+    }
+    console.log(`${userId} error: ${e}`);
+  };
+
   bot.onText(/^\/cast([^]*)/, async (msg, match) => {
     if (msg.chat.type !== 'private' || !admins.includes(msg.from!.id) || !match) {
       return;
     }
-    const allUsers = await db.find<User>({});
-    allUsers.forEach((user, index) => {
-      setTimeout(() => {
-        bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
-          .catch((e) => console.log(`${user.tgId} error: ${e}`))
-      }, index * 750)
-    })
-    await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
+    const allUsers = await db.find<User>({ blocked: { $ne: true } });
+
+    await bot.sendMessage(msg.chat.id, `Рассылаю ${allUsers.length} людям
+Примерное время ожидания: ${Math.round(allUsers.length / 60)} минут`);
+
+    for (const user of users) {
+      try {
+        await bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
+      } catch (e) {
+        await castBlockedHandler(e, user.tgId);
+        if (e.response && e.response.body && e.response.body.code && e.response.body.code === 429) {
+          const seconds = parseInt(e.response.body.description.split('retry after ')[1], 10);
+          await bot.sendMessage(msg.chat.id, `Рассылка приостановлена на ${seconds} секунд!`);
+          await sleep((seconds + 10) * 1000);
+        }
+      }
+      await bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
+        .catch((e) => castBlockedHandler(e, user.tgId));
+      await sleep(1000);
+    }
+    await bot.sendMessage(msg.chat.id, `Рассылка окончена!`);
   });
 
   bot.onText(/^\/forwardCast$/, async (msg, match) => {
     if (msg.chat.type !== 'private' || !admins.includes(msg.from!.id) || !match || !msg.reply_to_message) {
       return;
     }
-    const allUsers = await db.find<User>({});
-    allUsers.forEach((user, index) => {
-      setTimeout(() => {
-        bot.forwardMessage(user.tgId, msg.reply_to_message!.chat.id, msg.reply_to_message!.message_id)
-          .catch((e) => console.log(`${user.tgId} error: ${e}`))
-      }, index * 750)
-    })
-    await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
+    const allUsers = await db.find<User>({ blocked: { $ne: true } });
+
+    await bot.sendMessage(msg.chat.id, `Рассылаю ${allUsers.length} людям
+Примерное время ожидания: ${Math.round(allUsers.length / 60)} минут`);
+
+    for (const user of users) {
+      try {
+        await bot.forwardMessage(user.tgId, msg.reply_to_message!.chat.id, msg.reply_to_message!.message_id);
+      } catch (e) {
+        await castBlockedHandler(e, user.tgId);
+        if (e.response && e.response.body && e.response.body.code && e.response.body.code === 429) {
+          const seconds = parseInt(e.response.body.description.split('retry after ')[1], 10);
+          await bot.sendMessage(msg.chat.id, `Рассылка приостановлена на ${seconds} секунд!`);
+          await sleep((seconds + 10) * 1000);
+        }
+      }
+      await sleep(1000);
+    }
+    await bot.sendMessage(msg.chat.id, `Рассылка окончена!`);
   });
 
   bot.onText(/^\/previewCast([^]*)/, async (msg, match) => {
