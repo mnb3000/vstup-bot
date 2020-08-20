@@ -351,6 +351,21 @@ _Если это не ваша заявка - попробуйте добави�
     await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
   });
 
+  bot.onText(/^\/forwardCast$/, async (msg, match) => {
+    if (msg.chat.type !== 'private' || !admins.includes(msg.from!.id) || !match || !msg.reply_to_message) {
+      return;
+    }
+    const allUsers = await db.find<User>({});
+    allUsers.forEach((user, index) => {
+      setTimeout(() => {
+        bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
+          .catch((e) => console.log(`${user.tgId} error: ${e}`))
+        bot.forwardMessage(user.tgId, msg.reply_to_message!.chat.id, msg.reply_to_message!.message_id)
+      }, index * 50)
+    })
+    await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
+  });
+
   bot.onText(/^\/previewCast([^]*)/, async (msg, match) => {
     if (msg.chat.type !== 'private' || !admins.includes(msg.from!.id) || !match) {
       return;
