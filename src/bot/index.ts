@@ -358,8 +358,6 @@ _Если это не ваша заявка - попробуйте добави�
     const allUsers = await db.find<User>({});
     allUsers.forEach((user, index) => {
       setTimeout(() => {
-        bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
-          .catch((e) => console.log(`${user.tgId} error: ${e}`))
         bot.forwardMessage(user.tgId, msg.reply_to_message!.chat.id, msg.reply_to_message!.message_id)
       }, index * 50)
     })
