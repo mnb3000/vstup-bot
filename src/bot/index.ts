@@ -114,6 +114,7 @@ async function main() {
     const users = await db.find<User>({ tgId: msg.from.id });
     if (!users.length) {
       await db.insert<User>({ tgId: msg.from.id });
+      return;
     }
     if (users[0].blocked) {
       await db.update({ tgId: msg.from.id }, { $unset: { blocked: true } });
