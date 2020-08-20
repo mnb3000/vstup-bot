@@ -360,7 +360,7 @@ _Если это не ваша заявка - попробуйте добави�
       setTimeout(() => {
         bot.forwardMessage(user.tgId, msg.reply_to_message!.chat.id, msg.reply_to_message!.message_id)
           .catch((e) => console.log(`${user.tgId} error: ${e}`))
-      }, index * 200)
+      }, index * 300)
     })
     await bot.sendMessage(msg.chat.id, `Разослано ${allUsers.length} людям`);
   });
