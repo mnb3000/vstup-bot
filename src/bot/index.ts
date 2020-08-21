@@ -353,7 +353,7 @@ _Если это не ваша заявка - попробуйте добави�
   const castBlockedHandler = async (e: any, userId: number) => {
     if (e.response && e.response.body && e.response.body.error_code && e.response.body.error_code === 403) {
       console.log(`${userId} blocked`);
-      await db.update({ tdId: userId }, { $set: { blocked: true } });
+      await db.update({ tgId: userId }, { $set: { blocked: true } });
       return;
     }
     console.log(`${userId} error: ${e}`);
