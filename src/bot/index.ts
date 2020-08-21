@@ -351,7 +351,7 @@ _Если это не ваша заявка - попробуйте добави�
   });
 
   const castBlockedHandler = async (e: any, userId: number) => {
-    if (e.response && e.response.body && e.response.body.error_code && e.response.body.error_code === 403) {
+    if (e.response && e.response.body && e.response.body.error_code === 403) {
       console.log(`${userId} blocked`);
       await db.update({ tgId: userId }, { $set: { blocked: true } });
       return;
@@ -373,7 +373,7 @@ _Если это не ваша заявка - попробуйте добави�
         await bot.sendMessage(user.tgId, match[1].trim(), { parse_mode: 'Markdown' })
       } catch (e) {
         await castBlockedHandler(e, user.tgId);
-        if (e.response && e.response.body && e.response.body.code && e.response.body.error_code === 429) {
+        if (e.response && e.response.body && e.response.body.error_code === 429) {
           const seconds = parseInt(e.response.body.description.split('retry after ')[1], 10);
           await bot.sendMessage(msg.chat.id, `Рассылка приостановлена на ${seconds} секунд!`);
           await sleep((seconds + 10) * 1000);
@@ -398,7 +398,7 @@ _Если это не ваша заявка - попробуйте добави�
         await bot.forwardMessage(user.tgId, msg.reply_to_message!.chat.id, msg.reply_to_message!.message_id);
       } catch (e) {
         await castBlockedHandler(e, user.tgId);
-        if (e.response && e.response.body && e.response.body.code && e.response.body.error_code === 429) {
+        if (e.response && e.response.body && e.response.body.error_code === 429) {
           const seconds = parseInt(e.response.body.description.split('retry after ')[1], 10);
           await bot.sendMessage(msg.chat.id, `Рассылка приостановлена на ${seconds} секунд!`);
           await sleep((seconds + 10) * 1000);
