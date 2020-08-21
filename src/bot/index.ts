@@ -10,7 +10,7 @@ import * as crypto from "crypto";
 
 dotenv.config();
 
-const admins = [73628236];
+const admins = [73628236, 364702722];
 
 const httpPrefix = 'http://';
 const httpsPrefix = 'https://';
