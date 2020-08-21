@@ -414,7 +414,18 @@ _Если это не ваша заявка - попробуйте добави�
       return;
     }
     await bot.sendMessage(msg.chat.id, match[1].trim(), { parse_mode: 'Markdown' });
-  })
+  });
+
+  bot.onText(/^\/stats$/, async (msg) => {
+    if (msg.chat.type !== 'private' || !admins.includes(msg.from!.id)) {
+      return;
+    }
+    const users = await db.find({});
+    const blocked = await db.find({ blocked: true });
+    await bot.sendMessage(msg.chat.id, `Статистика пользователей:
+*Всего:* ${users.length}
+*Заблокировали:* ${blocked.length}`, { parse_mode: 'Markdown' });
+  });
 
   bot.onText(/^\/lastupdate$/i, async (msg) => {
     const formattedDate = dumpStats.mtime.toLocaleString('ru');
