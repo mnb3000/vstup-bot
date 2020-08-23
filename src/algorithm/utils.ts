@@ -4,21 +4,46 @@ import {
   FullSpecBaseDict,
   FullSpecDict,
   FullSpecListItem,
-  Maybe,
-  StudentDict,
+  Maybe, Spec,
+  StudentDict, SuperVolumes,
   University
 } from '../types';
 
-export function filterDump(dump: Area[], regexFilter: RegExp): Area[] {
+export function filterDump(dump: Area[]): Area[] {
   const filteredDump: Area[] = [];
   dump.forEach((area) => {
     const filteredArea: Area = { ...area, universities: [] };
     area.universities.forEach((university) => {
       const filteredUniversity: University = { ...university, specs: [] };
       university.specs.forEach((spec) => {
-        if (spec.specNum.toString().match(regexFilter)) {
-          filteredUniversity.specs.push(spec);
-        }
+        const filteredSpec: Spec = { ...spec, students: [] };
+        spec.students.forEach((student) => {
+          if (student.status !== 'Рекомендовано (б)') {
+            filteredSpec.students.push(student);
+          } else {
+            filteredSpec.budgetPlaces -= 1;
+            const specNumString = filteredSpec.specNum.toString().padStart(3, '0');
+            if (specNumString.match(/^12[^1]$/)) {
+              SuperVolumes["12*"] -= 1;
+            } else if (specNumString.match(/^13.$/)) {
+              SuperVolumes["13*"] -= 1;
+            } else if (specNumString.match(/^14.$/)) {
+              SuperVolumes["14*"] -= 1;
+            } else if (specNumString.match(/^17.$/)) {
+              SuperVolumes["17*"] -= 1;
+            } else if (specNumString.match(/^23.$/)) {
+              SuperVolumes["23*"] -= 1;
+            } else if (specNumString.match(/^24.$/)) {
+              SuperVolumes["24*"] -= 1;
+            } else if (specNumString.match(/^29.$/)) {
+              SuperVolumes["29*"] -= 1;
+            } else {
+              // @ts-ignore
+              SuperVolumes[specNumString] -= 1;
+            }
+          }
+        });
+        filteredUniversity.specs.push(filteredSpec);
       });
       if (filteredUniversity.specs.length) {
         filteredArea.universities.push(filteredUniversity);
