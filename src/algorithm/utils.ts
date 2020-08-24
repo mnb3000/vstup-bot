@@ -18,7 +18,7 @@ export function filterDump(dump: Area[]): Area[] {
       university.specs.forEach((spec) => {
         const filteredSpec: Spec = { ...spec, students: [] };
         spec.students.forEach((student) => {
-          if (student.status !== 'Рекомендовано (б)') {
+          if (student.status !== 'Рекомендовано (б)' && student.status !== 'До наказу (б)') {
             filteredSpec.students.push(student);
           } else {
             filteredSpec.budgetPlaces -= 1;
